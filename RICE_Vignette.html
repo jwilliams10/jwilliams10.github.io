@@ -12,7 +12,7 @@
 
 <meta name="author" content="Jacob WIlliams" />
 
-<meta name="date" content="2024-10-21" />
+<meta name="date" content="2024-10-23" />
 
 <title>RICE</title>
 
@@ -340,7 +340,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">RICE</h1>
 <h4 class="author">Jacob WIlliams</h4>
-<h4 class="date">2024-10-21</h4>
+<h4 class="date">2024-10-23</h4>
 
 
 
@@ -377,6 +377,11 @@ PRS using chromosome 22 of 1000 Genomes data and provides details on the
 SuperLearner ensemble regression algorithm used in both RICE-RV and
 RICE-CV. Data included in this vignette is located at <a href="https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/Y7AXYA" class="uri">https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/Y7AXYA</a>
 and can be either directly downloaded from this link or using wget.</p>
+<p>Note, this vignette shows how to create a rare variant PRS using
+burden scores extracted from an AGDS file. However, if a user has burden
+scores from another source, a rare variant PRS can still be constructed
+following the RICE-RV structure. If this is the case, start at the
+Penalized Regression section below.</p>
 <div id="rice-rv" class="section level1">
 <h1>RICE-RV</h1>
 <p>RICE-RV performs rare variant association analysis to identify
