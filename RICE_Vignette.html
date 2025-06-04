@@ -12,7 +12,7 @@
 
 <meta name="author" content="Jacob WIlliams" />
 
-<meta name="date" content="2024-10-23" />
+<meta name="date" content="2025-06-04" />
 
 <title>RICE</title>
 
@@ -340,7 +340,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">RICE</h1>
 <h4 class="author">Jacob WIlliams</h4>
-<h4 class="date">2024-10-23</h4>
+<h4 class="date">2025-06-04</h4>
 
 
 
@@ -356,8 +356,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="fu">library</span>(STAARpipeline)</span>
 <span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="fu">library</span>(glmnet)</span>
 <span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="fu">library</span>(caret)</span>
-<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="fu">library</span>(SuperLearner)</span>
-<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="fu">library</span>(RICE)</span></code></pre></div>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="fu">library</span>(RICE)</span></code></pre></div>
 <p>RICE performs risk prediction for complex traits and diseases by
 incorporating both common (RICE-CV) and rare variants (RICE-RV). RICE
 framework consists of three main steps: (1) RICE-CV combines multiple
@@ -374,8 +373,8 @@ parameters and train the ensemble learning step; (3) a validation
 dataset to assess the final prediction performance.</p>
 <p>This vignette illustrates an example of constructing a rare variant
 PRS using chromosome 22 of 1000 Genomes data and provides details on the
-SuperLearner ensemble regression algorithm used in both RICE-RV and
-RICE-CV. Data included in this vignette is located at <a href="https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/Y7AXYA" class="uri">https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/Y7AXYA</a>
+ensemble regression algorithm used both RICE-RV. Data included in this
+vignette is located at <a href="https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/Y7AXYA" class="uri">https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/Y7AXYA</a>
 and can be either directly downloaded from this link or using wget.</p>
 <p>Note, this vignette shows how to create a rare variant PRS using
 burden scores extracted from an AGDS file. However, if a user has burden
@@ -389,9 +388,9 @@ significant rare variant sets using the training dataset with
 STAARpipeline. With these significant rare variant sets, burden scores
 are constructed for each set. Then penalized regression models are
 trained using the burden scores and predicted onto the tuning and
-validation datasets. Ensemble regression using SuperLearner optimizes
-the predictions to form a single PRS. Lastly, this PRS is projected onto
-the validation set to assess the final prediction performance.</p>
+validation datasets. Ensemble regression optimizes the predictions to
+form a single PRS. Lastly, this PRS is projected onto the validation set
+to assess the final prediction performance.</p>
 <p>The first step of RICE-RV involves STAARpipeline. RICE-RV can be seen
 as an extension of the STAARpipeline, as it relies on the results of
 STAARpipeline and operates with identical data structure. Therefore,
@@ -622,109 +621,24 @@ hyper-parameters.</p>
 <span id="cb7-33"><a href="#cb7-33" tabindex="-1"></a>all_valid <span class="ot">&lt;-</span> <span class="fu">cbind</span>(lasso_valid,ridge_valid)</span>
 <span id="cb7-34"><a href="#cb7-34" tabindex="-1"></a><span class="fu">colnames</span>(all_valid) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">paste0</span>(<span class="st">&quot;lasso&quot;</span>,<span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(lasso_valid)),<span class="fu">paste0</span>(<span class="st">&quot;ridge&quot;</span>,<span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(ridge_valid)))</span></code></pre></div>
 </div>
-<div id="superlearner" class="section level2">
-<h2>SuperLearner</h2>
-<p>The sixth and last step of RICE-RV, trains ensemble regression
-SuperLearner algorithm on the predicted penalized regression outcomes
-with the tuning dataset. The ensemble regression method used in RICE is
-not simply the SuperLearner model, but an augmented algorithm of our own
-design. The augmented ensemble regression uses SuperLearner to train an
-ensemble regression algorithm which ensembles Lasso and ridge regression
-algorithms. The performance of SuperLearner is compared against the
-performance of the Lasso and ridge regression trained in SuperLearner.
-The best performing prediction from the augmented SuperLearner based on
-<span class="math inline">\(R^2\)</span> on the tuning data is then
-compared to the prediction performance of the original penalized
-regression outputs. Lastly, the best predictor on the tuning data is the
-final rare variant PRS.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="do">## SuperLearner</span></span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="do">### Build a null model using control covariates to train the SuperLearner</span></span>
+<div id="ensemble-regression" class="section level2">
+<h2>Ensemble Regression</h2>
+<p>The sixth and last step of RICE-RV, trains an ensemble regression
+algorithm on the predicted penalized regression outcomes with the tuning
+dataset. The ensemble regression algorithm includes both Lasso and ridge
+regression as base learners.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="do">## Ensemble Regression</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="do">### Build a null model using control covariates to train the Ensembler Regression Algorithm</span></span>
 <span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>tune_null_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(Y<span class="sc">~</span><span class="dv">1</span>,<span class="at">data =</span> Phenotype_Data[Phenotype_Data<span class="sc">$</span>IDs <span class="sc">%in%</span> tune_set,])</span>
 <span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>y_tune <span class="ot">&lt;-</span> tune_null_model<span class="sc">$</span>residuals</span>
 <span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a></span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="do">### Compute the R2 of the penalized regression inputs</span></span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>best_r2 <span class="ot">&lt;-</span> <span class="fu">vector</span>()</span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>count <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="cf">for</span>(j <span class="cf">in</span> <span class="fu">colnames</span>(all_tune)){</span>
-<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>  tmp <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">y =</span> y_tune,<span class="at">x =</span> all_tune[,j])</span>
-<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>  best_r2[count] <span class="ot">&lt;-</span> <span class="fu">summary</span>(<span class="fu">lm</span>(y<span class="sc">~</span>x,<span class="at">data =</span> tmp))<span class="sc">$</span>r.squared</span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>  count <span class="ot">&lt;-</span> count <span class="sc">+</span> <span class="dv">1</span></span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>}</span>
-<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a></span>
-<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="do">### Store the best</span></span>
-<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a>best_singleprs <span class="ot">&lt;-</span> <span class="fu">colnames</span>(all_tune)[<span class="fu">which.max</span>(best_r2)]</span>
-<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a>r2_best_singleprs_tune <span class="ot">&lt;-</span> best_r2[<span class="fu">which.max</span>(best_r2)]</span>
-<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a></span>
-<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="do">### Clean the projections</span></span>
-<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a>mtx <span class="ot">&lt;-</span> <span class="fu">cor</span>(all_tune)</span>
-<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a>drop <span class="ot">&lt;-</span> <span class="fu">names</span>(<span class="fu">as.data.frame</span>(all_tune))[<span class="fu">apply</span>(mtx,<span class="dv">2</span>,<span class="cf">function</span>(x){<span class="fu">sum</span>(<span class="fu">is.na</span>(x))}) <span class="sc">==</span> (<span class="fu">nrow</span>(mtx) <span class="sc">-</span> <span class="dv">1</span>)]</span>
-<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a>  </span>
-<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a>all_tune <span class="ot">&lt;-</span> all_tune[,<span class="sc">!</span>(<span class="fu">colnames</span>(all_tune) <span class="sc">%in%</span> drop)]</span>
-<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a>all_valid <span class="ot">&lt;-</span> all_valid[,<span class="sc">!</span>(<span class="fu">colnames</span>(all_valid) <span class="sc">%in%</span> drop)]</span>
-<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a></span>
-<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a>drop <span class="ot">&lt;-</span> <span class="fu">findLinearCombos</span>(all_tune)<span class="sc">$</span>remove</span>
-<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a>drop <span class="ot">&lt;-</span> <span class="fu">names</span>(<span class="fu">as.data.frame</span>(all_tune))[drop]</span>
-<span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a></span>
-<span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a>all_tune <span class="ot">&lt;-</span> all_tune[,<span class="sc">!</span>(<span class="fu">colnames</span>(all_tune) <span class="sc">%in%</span> drop)]</span>
-<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a>all_valid <span class="ot">&lt;-</span> all_valid[,<span class="sc">!</span>(<span class="fu">colnames</span>(all_valid) <span class="sc">%in%</span> drop)]</span>
-<span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a></span>
-<span id="cb8-32"><a href="#cb8-32" tabindex="-1"></a>mtx <span class="ot">&lt;-</span> <span class="fu">cor</span>(all_tune)</span>
-<span id="cb8-33"><a href="#cb8-33" tabindex="-1"></a>drop <span class="ot">&lt;-</span> <span class="fu">findCorrelation</span>(mtx,<span class="at">cutoff=</span><span class="fl">0.98</span>)</span>
-<span id="cb8-34"><a href="#cb8-34" tabindex="-1"></a>drop <span class="ot">&lt;-</span> <span class="fu">names</span>(<span class="fu">as.data.frame</span>(all_tune))[drop]</span>
-<span id="cb8-35"><a href="#cb8-35" tabindex="-1"></a>  </span>
-<span id="cb8-36"><a href="#cb8-36" tabindex="-1"></a>all_tune <span class="ot">&lt;-</span> all_tune[,<span class="sc">!</span>(<span class="fu">colnames</span>(all_tune) <span class="sc">%in%</span> drop)]</span>
-<span id="cb8-37"><a href="#cb8-37" tabindex="-1"></a>all_valid <span class="ot">&lt;-</span> all_valid[,<span class="sc">!</span>(<span class="fu">colnames</span>(all_valid) <span class="sc">%in%</span> drop)]</span>
-<span id="cb8-38"><a href="#cb8-38" tabindex="-1"></a></span>
-<span id="cb8-39"><a href="#cb8-39" tabindex="-1"></a><span class="do">### SuperLearner in RICE is an ensemble of Lasso and ridge regression models as we want to maintain linearity</span></span>
-<span id="cb8-40"><a href="#cb8-40" tabindex="-1"></a>SL.library <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;SL.glmnet&quot;</span>,<span class="st">&quot;SL.ridge&quot;</span>)</span>
-<span id="cb8-41"><a href="#cb8-41" tabindex="-1"></a>  </span>
-<span id="cb8-42"><a href="#cb8-42" tabindex="-1"></a>full_superlearner <span class="ot">&lt;-</span> <span class="fu">SuperLearner</span>(<span class="at">Y =</span> y_tune, <span class="at">X =</span> <span class="fu">as.data.frame</span>(all_tune), <span class="at">family =</span> <span class="fu">gaussian</span>(),</span>
-<span id="cb8-43"><a href="#cb8-43" tabindex="-1"></a>                                    <span class="at">SL.library =</span> SL.library,<span class="at">cvControl =</span> <span class="fu">list</span>(<span class="at">V =</span> <span class="dv">20</span>))</span>
-<span id="cb8-44"><a href="#cb8-44" tabindex="-1"></a><span class="do">### Perform cross validation of SuperLearner on the tuning dataset to see whether Lasso, Ridge, or SuperLearner performs best </span></span>
-<span id="cb8-45"><a href="#cb8-45" tabindex="-1"></a>cvsl <span class="ot">&lt;-</span> <span class="fu">CV.SuperLearner</span>(<span class="at">Y =</span> y_tune, <span class="at">X =</span> <span class="fu">as.data.frame</span>(all_tune), <span class="at">family =</span> <span class="fu">gaussian</span>(),</span>
-<span id="cb8-46"><a href="#cb8-46" tabindex="-1"></a>                          <span class="at">SL.library =</span> SL.library,<span class="at">cvControl =</span> <span class="fu">list</span>(<span class="at">V =</span> <span class="dv">20</span>))</span>
-<span id="cb8-47"><a href="#cb8-47" tabindex="-1"></a></span>
-<span id="cb8-48"><a href="#cb8-48" tabindex="-1"></a>best_algorithm <span class="ot">&lt;-</span> <span class="fu">summary</span>(cvsl)<span class="sc">$</span>Table<span class="sc">$</span>Algorithm[<span class="fu">which.min</span>(<span class="fu">summary</span>(cvsl)<span class="sc">$</span>Table<span class="sc">$</span>Ave)]</span>
-<span id="cb8-49"><a href="#cb8-49" tabindex="-1"></a>  </span>
-<span id="cb8-50"><a href="#cb8-50" tabindex="-1"></a><span class="do">### Predict all outcomes</span></span>
-<span id="cb8-51"><a href="#cb8-51" tabindex="-1"></a>RareVariantPRS_Tune <span class="ot">&lt;-</span> <span class="fu">predict</span>(full_superlearner, <span class="fu">as.data.frame</span>(all_tune), <span class="at">onlySL =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb8-52"><a href="#cb8-52" tabindex="-1"></a>RareVariantPRS_Valid <span class="ot">&lt;-</span> <span class="fu">predict</span>(full_superlearner, all_valid, <span class="at">onlySL =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb8-53"><a href="#cb8-53" tabindex="-1"></a></span>
-<span id="cb8-54"><a href="#cb8-54" tabindex="-1"></a>prs_best_tune_sl <span class="ot">&lt;-</span> RareVariantPRS_Tune<span class="sc">$</span>pred</span>
-<span id="cb8-55"><a href="#cb8-55" tabindex="-1"></a>prs_best_tune_glmnet <span class="ot">&lt;-</span> RareVariantPRS_Tune<span class="sc">$</span>library.predict[,<span class="dv">1</span>]</span>
-<span id="cb8-56"><a href="#cb8-56" tabindex="-1"></a>prs_best_tune_ridge <span class="ot">&lt;-</span> RareVariantPRS_Tune<span class="sc">$</span>library.predict[,<span class="dv">2</span>]</span>
-<span id="cb8-57"><a href="#cb8-57" tabindex="-1"></a></span>
-<span id="cb8-58"><a href="#cb8-58" tabindex="-1"></a>prs_best_valid_sl <span class="ot">&lt;-</span> RareVariantPRS_Valid<span class="sc">$</span>pred</span>
-<span id="cb8-59"><a href="#cb8-59" tabindex="-1"></a>prs_best_valid_glmnet <span class="ot">&lt;-</span> RareVariantPRS_Valid<span class="sc">$</span>library.predict[,<span class="dv">1</span>]</span>
-<span id="cb8-60"><a href="#cb8-60" tabindex="-1"></a>prs_best_valid_ridge <span class="ot">&lt;-</span> RareVariantPRS_Valid<span class="sc">$</span>library.predict[,<span class="dv">2</span>]</span>
-<span id="cb8-61"><a href="#cb8-61" tabindex="-1"></a></span>
-<span id="cb8-62"><a href="#cb8-62" tabindex="-1"></a><span class="do">### Choose best prediction from ensemble regression</span></span>
-<span id="cb8-63"><a href="#cb8-63" tabindex="-1"></a><span class="cf">if</span>(best_algorithm <span class="sc">==</span> <span class="st">&quot;SL.glmnet_All&quot;</span>){</span>
-<span id="cb8-64"><a href="#cb8-64" tabindex="-1"></a>    prs_best_tune <span class="ot">&lt;-</span> prs_best_tune_glmnet</span>
-<span id="cb8-65"><a href="#cb8-65" tabindex="-1"></a>    prs_best_valid <span class="ot">&lt;-</span> prs_best_valid_glmnet</span>
-<span id="cb8-66"><a href="#cb8-66" tabindex="-1"></a>}<span class="cf">else</span> <span class="cf">if</span>(best_algorithm <span class="sc">==</span> <span class="st">&quot;SL.ridge_All&quot;</span>){</span>
-<span id="cb8-67"><a href="#cb8-67" tabindex="-1"></a>    prs_best_tune <span class="ot">&lt;-</span> prs_best_tune_ridge</span>
-<span id="cb8-68"><a href="#cb8-68" tabindex="-1"></a>    prs_best_valid <span class="ot">&lt;-</span> prs_best_valid_ridge</span>
-<span id="cb8-69"><a href="#cb8-69" tabindex="-1"></a>}<span class="cf">else</span> {</span>
-<span id="cb8-70"><a href="#cb8-70" tabindex="-1"></a>    prs_best_tune <span class="ot">&lt;-</span> prs_best_tune_sl</span>
-<span id="cb8-71"><a href="#cb8-71" tabindex="-1"></a>    prs_best_valid <span class="ot">&lt;-</span> prs_best_valid_sl</span>
-<span id="cb8-72"><a href="#cb8-72" tabindex="-1"></a>}</span>
-<span id="cb8-73"><a href="#cb8-73" tabindex="-1"></a></span>
-<span id="cb8-74"><a href="#cb8-74" tabindex="-1"></a><span class="do">### Compute the R2 of the best ensemble regression prediction</span></span>
-<span id="cb8-75"><a href="#cb8-75" tabindex="-1"></a>r2_sl_tune <span class="ot">&lt;-</span> <span class="fu">summary</span>(<span class="fu">lm</span>(y<span class="sc">~</span>x,<span class="at">data =</span> <span class="fu">data.frame</span>(<span class="at">y =</span> y_tune,<span class="at">x =</span> prs_best_tune)))<span class="sc">$</span>r.squared</span>
-<span id="cb8-76"><a href="#cb8-76" tabindex="-1"></a></span>
-<span id="cb8-77"><a href="#cb8-77" tabindex="-1"></a><span class="do">### Compare to the best individual input R2, keep the best</span></span>
-<span id="cb8-78"><a href="#cb8-78" tabindex="-1"></a><span class="cf">if</span>(r2_sl_tune <span class="sc">&lt;</span> r2_best_singleprs_tune){</span>
-<span id="cb8-79"><a href="#cb8-79" tabindex="-1"></a>  prs_best_tune <span class="ot">&lt;-</span> all_tune[,best_thresh]</span>
-<span id="cb8-80"><a href="#cb8-80" tabindex="-1"></a>  prs_best_valid <span class="ot">&lt;-</span> all_valid[,best_thresh]</span>
-<span id="cb8-81"><a href="#cb8-81" tabindex="-1"></a>}</span>
-<span id="cb8-82"><a href="#cb8-82" tabindex="-1"></a></span>
-<span id="cb8-83"><a href="#cb8-83" tabindex="-1"></a><span class="do">### Save final PRS for tuning and validation sets</span></span>
-<span id="cb8-84"><a href="#cb8-84" tabindex="-1"></a>BestRareVariantPRS_Tune <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">IDs =</span> tune_set,<span class="at">PRS =</span> prs_best_tune)</span>
-<span id="cb8-85"><a href="#cb8-85" tabindex="-1"></a>BestRareVariantPRS_Valid <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">IDs =</span> validation_set,<span class="at">PRS =</span> prs_best_valid)</span></code></pre></div>
-<p>This ensemble regression algorithm is the exact same one used in
-RICE-CV but the input is instead all of the PRSs from existing
-methods.</p>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>Results <span class="ot">&lt;-</span> <span class="fu">Ensemble_Function</span>(<span class="at">PRSs =</span> all_tune,<span class="at">Y =</span> y_tune,<span class="at">family =</span> <span class="st">&quot;continuous&quot;</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="do">## Set coefficients of rank deficient columns to 0</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>Results<span class="sc">$</span>Coefficients[<span class="fu">is.na</span>(Results<span class="sc">$</span>Coefficients)] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="do">### Save final PRS for tuning and validation sets</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>BestRareVariantPRS_Tune <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">IDs =</span> tune_set,<span class="at">PRS =</span> <span class="fu">as.matrix</span>(all_tune[,<span class="fu">names</span>(Results<span class="sc">$</span>Coefficients)[<span class="sc">-</span><span class="dv">1</span>]]) <span class="sc">%*%</span> <span class="fu">matrix</span>(Results<span class="sc">$</span>Coefficients[<span class="sc">-</span><span class="dv">1</span>],<span class="at">ncol =</span> <span class="dv">1</span>))</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>BestRareVariantPRS_Valid <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">IDs =</span> validation_set,<span class="at">PRS =</span> <span class="fu">as.matrix</span>(all_valid[,<span class="fu">names</span>(Results<span class="sc">$</span>Coefficients)[<span class="sc">-</span><span class="dv">1</span>]]) <span class="sc">%*%</span> <span class="fu">matrix</span>(Results<span class="sc">$</span>Coefficients[<span class="sc">-</span><span class="dv">1</span>],<span class="at">ncol =</span> <span class="dv">1</span>))</span></code></pre></div>
 </div>
 <div id="evaluation" class="section level2">
 <h2>Evaluation</h2>
@@ -734,13 +648,13 @@ dataset.</p>
 <span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>y_valid <span class="ot">&lt;-</span> valid_null_model<span class="sc">$</span>residuals</span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a></span>
 <span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="do">### R2 of RICE-RV on Validation Data</span></span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">lm</span>(y<span class="sc">~</span>x,<span class="at">data =</span> <span class="fu">data.frame</span>(<span class="at">y=</span> y_valid,<span class="at">x =</span> prs_best_valid)))<span class="sc">$</span>r.squared</span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; [1] 0.05562963</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">lm</span>(y<span class="sc">~</span>x,<span class="at">data =</span> <span class="fu">data.frame</span>(<span class="at">y =</span> y_valid,<span class="at">x =</span> BestRareVariantPRS_Valid<span class="sc">$</span>PRS)))<span class="sc">$</span>r.squared</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; [1] 0.04935384</span></span>
 <span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a></span>
 <span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="do">### Beta of PRS per SD of RICE-RV on Validation Data</span></span>
-<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="fu">coef</span>(<span class="fu">lm</span>(y<span class="sc">~</span>x <span class="sc">-</span> <span class="dv">1</span>,<span class="at">data =</span> <span class="fu">data.frame</span>(<span class="at">y=</span><span class="fu">scale</span>(y_valid),<span class="at">x =</span> <span class="fu">scale</span>(prs_best_valid))))</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="fu">coef</span>(<span class="fu">lm</span>(y<span class="sc">~</span>x <span class="sc">-</span> <span class="dv">1</span>,<span class="at">data =</span> <span class="fu">data.frame</span>(<span class="at">y =</span> <span class="fu">scale</span>(y_valid),<span class="at">x =</span> <span class="fu">scale</span>(BestRareVariantPRS_Valid<span class="sc">$</span>PRS))))</span>
 <span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt;         x </span></span>
-<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; 0.2358593</span></span></code></pre></div>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; 0.2221572</span></span></code></pre></div>
 </div>
 <div id="extract-final-coefficients-of-rare-variant-sets" class="section level2">
 <h2>Extract Final Coefficients of Rare Variant Sets</h2>
@@ -751,7 +665,7 @@ projection of the significant burden scores. Using the tuning dataset,
 we can estimate the final coefficients of the significant rare variant
 sets with the following code.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="do">## Estimate Final Coefficients</span></span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>Linear_Projection <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">y =</span> prs_best_tune,X_tune)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>Linear_Projection <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">y =</span> BestRareVariantPRS_Tune<span class="sc">$</span>PRS,X_tune)</span>
 <span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="do">### The tuning PRS is a perfect linear projection of the significant burden scores</span></span>
 <span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">lm</span>(y<span class="sc">~</span>.,<span class="at">data =</span>Linear_Projection))<span class="sc">$</span>r.squared</span>
 <span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
@@ -759,12 +673,12 @@ sets with the following code.</p>
 <span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>coding_sig<span class="sc">$</span>Final_Coefficients <span class="ot">&lt;-</span> <span class="fu">unname</span>(<span class="fu">coef</span>(<span class="fu">lm</span>(y<span class="sc">~</span>.,<span class="at">data =</span> Linear_Projection))[<span class="sc">-</span><span class="dv">1</span>])</span>
 <span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="fu">head</span>(coding_sig)</span>
 <span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt;        Gene Chr   Category Number_SNV       STAARB Final_Coefficients</span></span>
-<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; 18   RANBP1  22   missense          5 4.566458e-05         0.81881402</span></span>
-<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; 23    PI4KA  22 synonymous         60 5.117859e-04         0.06437680</span></span>
-<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; 25 SERPIND1  22   missense         15 6.412555e-04         0.08098721</span></span>
-<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; 28  ZNF280B  22   missense          8 8.451143e-08         1.00794426</span></span>
-<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt; 30   GGTLC2  22   missense         26 5.101352e-06        -0.28491982</span></span>
-<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt; 33  PIK3IP1  22 synonymous          3 5.468301e-07         0.73066134</span></span></code></pre></div>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; 18   RANBP1  22   missense          5 4.566458e-05         1.08275160</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; 23    PI4KA  22 synonymous         60 5.117859e-04         0.12985495</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; 25 SERPIND1  22   missense         15 6.412555e-04        -0.06010972</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; 28  ZNF280B  22   missense          8 8.451143e-08         1.01263845</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt; 30   GGTLC2  22   missense         26 5.101352e-06        -0.20726166</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt; 33  PIK3IP1  22 synonymous          3 5.468301e-07         0.97698168</span></span></code></pre></div>
 </div>
 <div id="extensions" class="section level2">
 <h2>Extensions</h2>
@@ -787,21 +701,17 @@ combine significant coding and noncoding burden scores, and perform the
 identical ensemble regression algorithm. Lastly to extend to binary
 traits, fit a binary null model with STAARpipeline, perform the
 respective rare variant association tests, extract the significant
-burden scores, implement the penalized regression models,and modify the
-SuperLearner to use binary outcomes. These modifications include using
-AUC computed in the <code>RISCA</code> package instead of <span class="math inline">\(R^2\)</span>, using
-<code>method = &quot;method.AUC&quot;</code> in the SuperLearner call, and
-dropping the ridge regression in <code>SL.library</code> as SuperLearner
-does not support that for binary outcomes. The implementation of this
-algorithm for binary traits for the UK Biobank whole exome sequencing
-analysis can be found at <a href="https://github.com/jwilliams10/RareVariantPRS/blob/main/WES/Binary/RareVariant_PRS/Single_RareVariant_PRS_All.R" class="uri">https://github.com/jwilliams10/RareVariantPRS/blob/main/WES/Binary/RareVariant_PRS/Single_RareVariant_PRS_All.R</a>.</p>
+burden scores, implement the penalized regression models,and set
+<code>family = &quot;binary&quot;</code> in the <code>Ensemble_Function</code>.
+The implementation of this algorithm for binary traits for the UK
+Biobank whole exome sequencing analysis can be found at <a href="https://github.com/jwilliams10/RareVariantPRS/blob/main/WES/Binary/RareVariant_PRS/Single_RareVariant_PRS_All.R" class="uri">https://github.com/jwilliams10/RareVariantPRS/blob/main/WES/Binary/RareVariant_PRS/Single_RareVariant_PRS_All.R</a>.</p>
 </div>
 <div id="sessioninfo" class="section level2">
 <h2>SessionInfo</h2>
 <div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
 <span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co">#&gt; R version 4.4.1 (2024-06-14)</span></span>
 <span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin20</span></span>
-<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Sonoma 14.7</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS 15.5</span></span>
 <span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
 <span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/lib/libRblas.0.dylib </span></span>
@@ -814,107 +724,103 @@ analysis can be found at <a href="https://github.com/jwilliams10/RareVariantPRS/
 <span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="co">#&gt; tzcode source: internal</span></span>
 <span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="co">#&gt; attached base packages:</span></span>
-<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a><span class="co">#&gt; [1] splines   stats4    stats     graphics  grDevices utils     datasets </span></span>
-<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a><span class="co">#&gt; [8] methods   base     </span></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a><span class="co">#&gt; [1] stats4    stats     graphics  grDevices utils     datasets  methods  </span></span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a><span class="co">#&gt; [8] base     </span></span>
 <span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
 <span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a><span class="co">#&gt;  [1] RICE_0.1.0                              </span></span>
-<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a><span class="co">#&gt;  [2] SuperLearner_2.0-29                     </span></span>
-<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a><span class="co">#&gt;  [3] gam_1.22-5                              </span></span>
-<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a><span class="co">#&gt;  [4] foreach_1.5.2                           </span></span>
-<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a><span class="co">#&gt;  [5] nnls_1.5                                </span></span>
-<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a><span class="co">#&gt;  [6] caret_6.0-94                            </span></span>
-<span id="cb11-27"><a href="#cb11-27" tabindex="-1"></a><span class="co">#&gt;  [7] lattice_0.22-6                          </span></span>
-<span id="cb11-28"><a href="#cb11-28" tabindex="-1"></a><span class="co">#&gt;  [8] ggplot2_3.5.1                           </span></span>
-<span id="cb11-29"><a href="#cb11-29" tabindex="-1"></a><span class="co">#&gt;  [9] glmnet_4.1-8                            </span></span>
-<span id="cb11-30"><a href="#cb11-30" tabindex="-1"></a><span class="co">#&gt; [10] STAARpipeline_0.9.7                     </span></span>
-<span id="cb11-31"><a href="#cb11-31" tabindex="-1"></a><span class="co">#&gt; [11] SCANG_1.0.4                             </span></span>
-<span id="cb11-32"><a href="#cb11-32" tabindex="-1"></a><span class="co">#&gt; [12] Matrix_1.7-0                            </span></span>
-<span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a><span class="co">#&gt; [13] TxDb.Hsapiens.UCSC.hg38.knownGene_3.18.0</span></span>
-<span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a><span class="co">#&gt; [14] GenomicFeatures_1.56.0                  </span></span>
-<span id="cb11-35"><a href="#cb11-35" tabindex="-1"></a><span class="co">#&gt; [15] AnnotationDbi_1.66.0                    </span></span>
-<span id="cb11-36"><a href="#cb11-36" tabindex="-1"></a><span class="co">#&gt; [16] Biobase_2.64.0                          </span></span>
-<span id="cb11-37"><a href="#cb11-37" tabindex="-1"></a><span class="co">#&gt; [17] GenomicRanges_1.56.1                    </span></span>
-<span id="cb11-38"><a href="#cb11-38" tabindex="-1"></a><span class="co">#&gt; [18] GenomeInfoDb_1.40.1                     </span></span>
-<span id="cb11-39"><a href="#cb11-39" tabindex="-1"></a><span class="co">#&gt; [19] IRanges_2.38.1                          </span></span>
-<span id="cb11-40"><a href="#cb11-40" tabindex="-1"></a><span class="co">#&gt; [20] S4Vectors_0.42.1                        </span></span>
-<span id="cb11-41"><a href="#cb11-41" tabindex="-1"></a><span class="co">#&gt; [21] BiocGenerics_0.50.0                     </span></span>
-<span id="cb11-42"><a href="#cb11-42" tabindex="-1"></a><span class="co">#&gt; [22] STAAR_0.9.7                             </span></span>
-<span id="cb11-43"><a href="#cb11-43" tabindex="-1"></a><span class="co">#&gt; [23] dplyr_1.1.4                             </span></span>
-<span id="cb11-44"><a href="#cb11-44" tabindex="-1"></a><span class="co">#&gt; [24] SeqVarTools_1.42.0                      </span></span>
-<span id="cb11-45"><a href="#cb11-45" tabindex="-1"></a><span class="co">#&gt; [25] SeqArray_1.44.0                         </span></span>
-<span id="cb11-46"><a href="#cb11-46" tabindex="-1"></a><span class="co">#&gt; [26] gdsfmt_1.40.0                           </span></span>
-<span id="cb11-47"><a href="#cb11-47" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb11-48"><a href="#cb11-48" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb11-49"><a href="#cb11-49" tabindex="-1"></a><span class="co">#&gt;   [1] BiocIO_1.14.0               bitops_1.0-8               </span></span>
-<span id="cb11-50"><a href="#cb11-50" tabindex="-1"></a><span class="co">#&gt;   [3] tibble_3.2.1                GWASExactHW_1.2            </span></span>
-<span id="cb11-51"><a href="#cb11-51" tabindex="-1"></a><span class="co">#&gt;   [5] GENESIS_2.34.0              hardhat_1.4.0              </span></span>
-<span id="cb11-52"><a href="#cb11-52" tabindex="-1"></a><span class="co">#&gt;   [7] pROC_1.18.5                 XML_3.99-0.17              </span></span>
-<span id="cb11-53"><a href="#cb11-53" tabindex="-1"></a><span class="co">#&gt;   [9] rpart_4.1.23                lifecycle_1.0.4            </span></span>
-<span id="cb11-54"><a href="#cb11-54" tabindex="-1"></a><span class="co">#&gt;  [11] formula.tools_1.7.1         globals_0.16.3             </span></span>
-<span id="cb11-55"><a href="#cb11-55" tabindex="-1"></a><span class="co">#&gt;  [13] MASS_7.3-61                 backports_1.5.0            </span></span>
-<span id="cb11-56"><a href="#cb11-56" tabindex="-1"></a><span class="co">#&gt;  [15] magrittr_2.0.3              sass_0.4.9                 </span></span>
-<span id="cb11-57"><a href="#cb11-57" tabindex="-1"></a><span class="co">#&gt;  [17] rmarkdown_2.28              jquerylib_0.1.4            </span></span>
-<span id="cb11-58"><a href="#cb11-58" tabindex="-1"></a><span class="co">#&gt;  [19] yaml_2.3.10                 DBI_1.2.3                  </span></span>
-<span id="cb11-59"><a href="#cb11-59" tabindex="-1"></a><span class="co">#&gt;  [21] minqa_1.2.8                 lubridate_1.9.3            </span></span>
-<span id="cb11-60"><a href="#cb11-60" tabindex="-1"></a><span class="co">#&gt;  [23] abind_1.4-8                 zlibbioc_1.50.0            </span></span>
-<span id="cb11-61"><a href="#cb11-61" tabindex="-1"></a><span class="co">#&gt;  [25] quadprog_1.5-8              purrr_1.0.2                </span></span>
-<span id="cb11-62"><a href="#cb11-62" tabindex="-1"></a><span class="co">#&gt;  [27] RCurl_1.98-1.16             nnet_7.3-19                </span></span>
-<span id="cb11-63"><a href="#cb11-63" tabindex="-1"></a><span class="co">#&gt;  [29] sandwich_3.1-1              ipred_0.9-15               </span></span>
-<span id="cb11-64"><a href="#cb11-64" tabindex="-1"></a><span class="co">#&gt;  [31] lava_1.8.0                  GenomeInfoDbData_1.2.12    </span></span>
-<span id="cb11-65"><a href="#cb11-65" tabindex="-1"></a><span class="co">#&gt;  [33] listenv_0.9.1               GWASTools_1.50.0           </span></span>
-<span id="cb11-66"><a href="#cb11-66" tabindex="-1"></a><span class="co">#&gt;  [35] MatrixModels_0.5-3          parallelly_1.38.0          </span></span>
-<span id="cb11-67"><a href="#cb11-67" tabindex="-1"></a><span class="co">#&gt;  [37] codetools_0.2-20            DelayedArray_0.30.1        </span></span>
-<span id="cb11-68"><a href="#cb11-68" tabindex="-1"></a><span class="co">#&gt;  [39] DNAcopy_1.78.0              tidyselect_1.2.1           </span></span>
-<span id="cb11-69"><a href="#cb11-69" tabindex="-1"></a><span class="co">#&gt;  [41] shape_1.4.6.1               UCSC.utils_1.0.0           </span></span>
-<span id="cb11-70"><a href="#cb11-70" tabindex="-1"></a><span class="co">#&gt;  [43] lme4_1.1-35.5               matrixStats_1.4.1          </span></span>
-<span id="cb11-71"><a href="#cb11-71" tabindex="-1"></a><span class="co">#&gt;  [45] GenomicAlignments_1.40.0    jsonlite_1.8.9             </span></span>
-<span id="cb11-72"><a href="#cb11-72" tabindex="-1"></a><span class="co">#&gt;  [47] GMMAT_1.4.2                 mitml_0.4-5                </span></span>
-<span id="cb11-73"><a href="#cb11-73" tabindex="-1"></a><span class="co">#&gt;  [49] survival_3.7-0              iterators_1.0.14           </span></span>
-<span id="cb11-74"><a href="#cb11-74" tabindex="-1"></a><span class="co">#&gt;  [51] emmeans_1.10.4              tools_4.4.1                </span></span>
-<span id="cb11-75"><a href="#cb11-75" tabindex="-1"></a><span class="co">#&gt;  [53] SNPRelate_1.38.0            Rcpp_1.0.13                </span></span>
-<span id="cb11-76"><a href="#cb11-76" tabindex="-1"></a><span class="co">#&gt;  [55] glue_1.7.0                  prodlim_2024.06.25         </span></span>
-<span id="cb11-77"><a href="#cb11-77" tabindex="-1"></a><span class="co">#&gt;  [57] pan_1.9                     SparseArray_1.4.8          </span></span>
-<span id="cb11-78"><a href="#cb11-78" tabindex="-1"></a><span class="co">#&gt;  [59] xfun_0.47                   mgcv_1.9-1                 </span></span>
-<span id="cb11-79"><a href="#cb11-79" tabindex="-1"></a><span class="co">#&gt;  [61] logistf_1.26.0              MatrixGenerics_1.16.0      </span></span>
-<span id="cb11-80"><a href="#cb11-80" tabindex="-1"></a><span class="co">#&gt;  [63] withr_3.0.1                 fastmap_1.2.0              </span></span>
-<span id="cb11-81"><a href="#cb11-81" tabindex="-1"></a><span class="co">#&gt;  [65] boot_1.3-31                 MultiSTAAR_0.9.7           </span></span>
-<span id="cb11-82"><a href="#cb11-82" tabindex="-1"></a><span class="co">#&gt;  [67] fansi_1.0.6                 SparseM_1.84-2             </span></span>
-<span id="cb11-83"><a href="#cb11-83" tabindex="-1"></a><span class="co">#&gt;  [69] digest_0.6.37               timechange_0.3.0           </span></span>
-<span id="cb11-84"><a href="#cb11-84" tabindex="-1"></a><span class="co">#&gt;  [71] R6_2.5.1                    estimability_1.5.1         </span></span>
-<span id="cb11-85"><a href="#cb11-85" tabindex="-1"></a><span class="co">#&gt;  [73] mice_3.16.0                 colorspace_2.1-1           </span></span>
-<span id="cb11-86"><a href="#cb11-86" tabindex="-1"></a><span class="co">#&gt;  [75] RSQLite_2.3.7               utf8_1.2.4                 </span></span>
-<span id="cb11-87"><a href="#cb11-87" tabindex="-1"></a><span class="co">#&gt;  [77] tidyr_1.3.1                 generics_0.1.3             </span></span>
-<span id="cb11-88"><a href="#cb11-88" tabindex="-1"></a><span class="co">#&gt;  [79] data.table_1.16.0           recipes_1.1.0              </span></span>
-<span id="cb11-89"><a href="#cb11-89" tabindex="-1"></a><span class="co">#&gt;  [81] rtracklayer_1.64.0          class_7.3-22               </span></span>
-<span id="cb11-90"><a href="#cb11-90" tabindex="-1"></a><span class="co">#&gt;  [83] httr_1.4.7                  S4Arrays_1.4.1             </span></span>
-<span id="cb11-91"><a href="#cb11-91" tabindex="-1"></a><span class="co">#&gt;  [85] ModelMetrics_1.2.2.2        pkgconfig_2.0.3            </span></span>
-<span id="cb11-92"><a href="#cb11-92" tabindex="-1"></a><span class="co">#&gt;  [87] gtable_0.3.5                timeDate_4041.110          </span></span>
-<span id="cb11-93"><a href="#cb11-93" tabindex="-1"></a><span class="co">#&gt;  [89] blob_1.2.4                  lmtest_0.9-40              </span></span>
-<span id="cb11-94"><a href="#cb11-94" tabindex="-1"></a><span class="co">#&gt;  [91] XVector_0.44.0              htmltools_0.5.8.1          </span></span>
-<span id="cb11-95"><a href="#cb11-95" tabindex="-1"></a><span class="co">#&gt;  [93] scales_1.3.0                png_0.1-8                  </span></span>
-<span id="cb11-96"><a href="#cb11-96" tabindex="-1"></a><span class="co">#&gt;  [95] gower_1.0.1                 knitr_1.48                 </span></span>
-<span id="cb11-97"><a href="#cb11-97" tabindex="-1"></a><span class="co">#&gt;  [97] rstudioapi_0.16.0           reshape2_1.4.4             </span></span>
-<span id="cb11-98"><a href="#cb11-98" tabindex="-1"></a><span class="co">#&gt;  [99] rjson_0.2.23                nlme_3.1-166               </span></span>
-<span id="cb11-99"><a href="#cb11-99" tabindex="-1"></a><span class="co">#&gt; [101] curl_5.2.3                  nloptr_2.1.1               </span></span>
-<span id="cb11-100"><a href="#cb11-100" tabindex="-1"></a><span class="co">#&gt; [103] cachem_1.1.0                zoo_1.8-12                 </span></span>
-<span id="cb11-101"><a href="#cb11-101" tabindex="-1"></a><span class="co">#&gt; [105] stringr_1.5.1               operator.tools_1.6.3       </span></span>
-<span id="cb11-102"><a href="#cb11-102" tabindex="-1"></a><span class="co">#&gt; [107] parallel_4.4.1              restfulr_0.0.15            </span></span>
-<span id="cb11-103"><a href="#cb11-103" tabindex="-1"></a><span class="co">#&gt; [109] pillar_1.9.0                grid_4.4.1                 </span></span>
-<span id="cb11-104"><a href="#cb11-104" tabindex="-1"></a><span class="co">#&gt; [111] vctrs_0.6.5                 jomo_2.7-6                 </span></span>
-<span id="cb11-105"><a href="#cb11-105" tabindex="-1"></a><span class="co">#&gt; [113] xtable_1.8-4                evaluate_1.0.0             </span></span>
-<span id="cb11-106"><a href="#cb11-106" tabindex="-1"></a><span class="co">#&gt; [115] mvtnorm_1.3-1               cli_3.6.3                  </span></span>
-<span id="cb11-107"><a href="#cb11-107" tabindex="-1"></a><span class="co">#&gt; [117] compiler_4.4.1              Rsamtools_2.20.0           </span></span>
-<span id="cb11-108"><a href="#cb11-108" tabindex="-1"></a><span class="co">#&gt; [119] rlang_1.1.4                 crayon_1.5.3               </span></span>
-<span id="cb11-109"><a href="#cb11-109" tabindex="-1"></a><span class="co">#&gt; [121] future.apply_1.11.2         kinship2_1.9.6.1           </span></span>
-<span id="cb11-110"><a href="#cb11-110" tabindex="-1"></a><span class="co">#&gt; [123] plyr_1.8.9                  stringi_1.8.4              </span></span>
-<span id="cb11-111"><a href="#cb11-111" tabindex="-1"></a><span class="co">#&gt; [125] BiocParallel_1.38.0         munsell_0.5.1              </span></span>
-<span id="cb11-112"><a href="#cb11-112" tabindex="-1"></a><span class="co">#&gt; [127] Biostrings_2.72.1           CompQuadForm_1.4.3         </span></span>
-<span id="cb11-113"><a href="#cb11-113" tabindex="-1"></a><span class="co">#&gt; [129] quantreg_5.98               bit64_4.5.2                </span></span>
-<span id="cb11-114"><a href="#cb11-114" tabindex="-1"></a><span class="co">#&gt; [131] future_1.34.0               quantsmooth_1.70.0         </span></span>
-<span id="cb11-115"><a href="#cb11-115" tabindex="-1"></a><span class="co">#&gt; [133] KEGGREST_1.44.1             SummarizedExperiment_1.34.0</span></span>
-<span id="cb11-116"><a href="#cb11-116" tabindex="-1"></a><span class="co">#&gt; [135] broom_1.0.7                 memoise_2.0.1              </span></span>
-<span id="cb11-117"><a href="#cb11-117" tabindex="-1"></a><span class="co">#&gt; [137] bslib_0.8.0                 bit_4.5.0</span></span></code></pre></div>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a><span class="co">#&gt;  [2] caret_7.0-1                             </span></span>
+<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a><span class="co">#&gt;  [3] lattice_0.22-6                          </span></span>
+<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a><span class="co">#&gt;  [4] ggplot2_3.5.2                           </span></span>
+<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a><span class="co">#&gt;  [5] glmnet_4.1-9                            </span></span>
+<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a><span class="co">#&gt;  [6] STAARpipeline_0.9.7                     </span></span>
+<span id="cb11-27"><a href="#cb11-27" tabindex="-1"></a><span class="co">#&gt;  [7] SCANG_1.0.4                             </span></span>
+<span id="cb11-28"><a href="#cb11-28" tabindex="-1"></a><span class="co">#&gt;  [8] Matrix_1.7-0                            </span></span>
+<span id="cb11-29"><a href="#cb11-29" tabindex="-1"></a><span class="co">#&gt;  [9] TxDb.Hsapiens.UCSC.hg38.knownGene_3.18.0</span></span>
+<span id="cb11-30"><a href="#cb11-30" tabindex="-1"></a><span class="co">#&gt; [10] GenomicFeatures_1.56.0                  </span></span>
+<span id="cb11-31"><a href="#cb11-31" tabindex="-1"></a><span class="co">#&gt; [11] AnnotationDbi_1.66.0                    </span></span>
+<span id="cb11-32"><a href="#cb11-32" tabindex="-1"></a><span class="co">#&gt; [12] Biobase_2.64.0                          </span></span>
+<span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a><span class="co">#&gt; [13] GenomicRanges_1.56.1                    </span></span>
+<span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a><span class="co">#&gt; [14] GenomeInfoDb_1.40.1                     </span></span>
+<span id="cb11-35"><a href="#cb11-35" tabindex="-1"></a><span class="co">#&gt; [15] IRanges_2.38.1                          </span></span>
+<span id="cb11-36"><a href="#cb11-36" tabindex="-1"></a><span class="co">#&gt; [16] S4Vectors_0.42.1                        </span></span>
+<span id="cb11-37"><a href="#cb11-37" tabindex="-1"></a><span class="co">#&gt; [17] BiocGenerics_0.50.0                     </span></span>
+<span id="cb11-38"><a href="#cb11-38" tabindex="-1"></a><span class="co">#&gt; [18] STAAR_0.9.7                             </span></span>
+<span id="cb11-39"><a href="#cb11-39" tabindex="-1"></a><span class="co">#&gt; [19] dplyr_1.1.4                             </span></span>
+<span id="cb11-40"><a href="#cb11-40" tabindex="-1"></a><span class="co">#&gt; [20] SeqVarTools_1.42.0                      </span></span>
+<span id="cb11-41"><a href="#cb11-41" tabindex="-1"></a><span class="co">#&gt; [21] SeqArray_1.44.0                         </span></span>
+<span id="cb11-42"><a href="#cb11-42" tabindex="-1"></a><span class="co">#&gt; [22] gdsfmt_1.40.0                           </span></span>
+<span id="cb11-43"><a href="#cb11-43" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-44"><a href="#cb11-44" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
+<span id="cb11-45"><a href="#cb11-45" tabindex="-1"></a><span class="co">#&gt;   [1] splines_4.4.1               BiocIO_1.14.0              </span></span>
+<span id="cb11-46"><a href="#cb11-46" tabindex="-1"></a><span class="co">#&gt;   [3] bitops_1.0-9                tibble_3.2.1               </span></span>
+<span id="cb11-47"><a href="#cb11-47" tabindex="-1"></a><span class="co">#&gt;   [5] GWASExactHW_1.2             GENESIS_2.34.0             </span></span>
+<span id="cb11-48"><a href="#cb11-48" tabindex="-1"></a><span class="co">#&gt;   [7] hardhat_1.4.1               pROC_1.18.5                </span></span>
+<span id="cb11-49"><a href="#cb11-49" tabindex="-1"></a><span class="co">#&gt;   [9] XML_3.99-0.17               rpart_4.1.23               </span></span>
+<span id="cb11-50"><a href="#cb11-50" tabindex="-1"></a><span class="co">#&gt;  [11] lifecycle_1.0.4             formula.tools_1.7.1        </span></span>
+<span id="cb11-51"><a href="#cb11-51" tabindex="-1"></a><span class="co">#&gt;  [13] globals_0.18.0              MASS_7.3-61                </span></span>
+<span id="cb11-52"><a href="#cb11-52" tabindex="-1"></a><span class="co">#&gt;  [15] backports_1.5.0             magrittr_2.0.3             </span></span>
+<span id="cb11-53"><a href="#cb11-53" tabindex="-1"></a><span class="co">#&gt;  [17] sass_0.4.9                  rmarkdown_2.28             </span></span>
+<span id="cb11-54"><a href="#cb11-54" tabindex="-1"></a><span class="co">#&gt;  [19] jquerylib_0.1.4             yaml_2.3.10                </span></span>
+<span id="cb11-55"><a href="#cb11-55" tabindex="-1"></a><span class="co">#&gt;  [21] DBI_1.2.3                   minqa_1.2.8                </span></span>
+<span id="cb11-56"><a href="#cb11-56" tabindex="-1"></a><span class="co">#&gt;  [23] RColorBrewer_1.1-3          lubridate_1.9.4            </span></span>
+<span id="cb11-57"><a href="#cb11-57" tabindex="-1"></a><span class="co">#&gt;  [25] abind_1.4-8                 zlibbioc_1.50.0            </span></span>
+<span id="cb11-58"><a href="#cb11-58" tabindex="-1"></a><span class="co">#&gt;  [27] quadprog_1.5-8              purrr_1.0.4                </span></span>
+<span id="cb11-59"><a href="#cb11-59" tabindex="-1"></a><span class="co">#&gt;  [29] RCurl_1.98-1.16             nnet_7.3-19                </span></span>
+<span id="cb11-60"><a href="#cb11-60" tabindex="-1"></a><span class="co">#&gt;  [31] sandwich_3.1-1              ipred_0.9-15               </span></span>
+<span id="cb11-61"><a href="#cb11-61" tabindex="-1"></a><span class="co">#&gt;  [33] lava_1.8.1                  GenomeInfoDbData_1.2.12    </span></span>
+<span id="cb11-62"><a href="#cb11-62" tabindex="-1"></a><span class="co">#&gt;  [35] listenv_0.9.1               GWASTools_1.50.0           </span></span>
+<span id="cb11-63"><a href="#cb11-63" tabindex="-1"></a><span class="co">#&gt;  [37] MatrixModels_0.5-3          parallelly_1.45.0          </span></span>
+<span id="cb11-64"><a href="#cb11-64" tabindex="-1"></a><span class="co">#&gt;  [39] codetools_0.2-20            DelayedArray_0.30.1        </span></span>
+<span id="cb11-65"><a href="#cb11-65" tabindex="-1"></a><span class="co">#&gt;  [41] DNAcopy_1.78.0              tidyselect_1.2.1           </span></span>
+<span id="cb11-66"><a href="#cb11-66" tabindex="-1"></a><span class="co">#&gt;  [43] shape_1.4.6.1               UCSC.utils_1.0.0           </span></span>
+<span id="cb11-67"><a href="#cb11-67" tabindex="-1"></a><span class="co">#&gt;  [45] farver_2.1.2                lme4_1.1-35.5              </span></span>
+<span id="cb11-68"><a href="#cb11-68" tabindex="-1"></a><span class="co">#&gt;  [47] matrixStats_1.4.1           GenomicAlignments_1.40.0   </span></span>
+<span id="cb11-69"><a href="#cb11-69" tabindex="-1"></a><span class="co">#&gt;  [49] jsonlite_1.8.9              GMMAT_1.4.2                </span></span>
+<span id="cb11-70"><a href="#cb11-70" tabindex="-1"></a><span class="co">#&gt;  [51] mitml_0.4-5                 survival_3.7-0             </span></span>
+<span id="cb11-71"><a href="#cb11-71" tabindex="-1"></a><span class="co">#&gt;  [53] iterators_1.0.14            emmeans_1.10.4             </span></span>
+<span id="cb11-72"><a href="#cb11-72" tabindex="-1"></a><span class="co">#&gt;  [55] foreach_1.5.2               tools_4.4.1                </span></span>
+<span id="cb11-73"><a href="#cb11-73" tabindex="-1"></a><span class="co">#&gt;  [57] SNPRelate_1.38.0            Rcpp_1.0.14                </span></span>
+<span id="cb11-74"><a href="#cb11-74" tabindex="-1"></a><span class="co">#&gt;  [59] glue_1.8.0                  prodlim_2025.04.28         </span></span>
+<span id="cb11-75"><a href="#cb11-75" tabindex="-1"></a><span class="co">#&gt;  [61] pan_1.9                     SparseArray_1.4.8          </span></span>
+<span id="cb11-76"><a href="#cb11-76" tabindex="-1"></a><span class="co">#&gt;  [63] xfun_0.47                   mgcv_1.9-1                 </span></span>
+<span id="cb11-77"><a href="#cb11-77" tabindex="-1"></a><span class="co">#&gt;  [65] logistf_1.26.0              MatrixGenerics_1.16.0      </span></span>
+<span id="cb11-78"><a href="#cb11-78" tabindex="-1"></a><span class="co">#&gt;  [67] withr_3.0.2                 fastmap_1.2.0              </span></span>
+<span id="cb11-79"><a href="#cb11-79" tabindex="-1"></a><span class="co">#&gt;  [69] boot_1.3-31                 MultiSTAAR_0.9.7           </span></span>
+<span id="cb11-80"><a href="#cb11-80" tabindex="-1"></a><span class="co">#&gt;  [71] SparseM_1.84-2              digest_0.6.37              </span></span>
+<span id="cb11-81"><a href="#cb11-81" tabindex="-1"></a><span class="co">#&gt;  [73] timechange_0.3.0            R6_2.6.1                   </span></span>
+<span id="cb11-82"><a href="#cb11-82" tabindex="-1"></a><span class="co">#&gt;  [75] estimability_1.5.1          mice_3.16.0                </span></span>
+<span id="cb11-83"><a href="#cb11-83" tabindex="-1"></a><span class="co">#&gt;  [77] RSQLite_2.3.7               tidyr_1.3.1                </span></span>
+<span id="cb11-84"><a href="#cb11-84" tabindex="-1"></a><span class="co">#&gt;  [79] generics_0.1.4              data.table_1.17.4          </span></span>
+<span id="cb11-85"><a href="#cb11-85" tabindex="-1"></a><span class="co">#&gt;  [81] recipes_1.3.1               rtracklayer_1.64.0         </span></span>
+<span id="cb11-86"><a href="#cb11-86" tabindex="-1"></a><span class="co">#&gt;  [83] class_7.3-22                httr_1.4.7                 </span></span>
+<span id="cb11-87"><a href="#cb11-87" tabindex="-1"></a><span class="co">#&gt;  [85] S4Arrays_1.4.1              ModelMetrics_1.2.2.2       </span></span>
+<span id="cb11-88"><a href="#cb11-88" tabindex="-1"></a><span class="co">#&gt;  [87] pkgconfig_2.0.3             gtable_0.3.6               </span></span>
+<span id="cb11-89"><a href="#cb11-89" tabindex="-1"></a><span class="co">#&gt;  [89] timeDate_4041.110           blob_1.2.4                 </span></span>
+<span id="cb11-90"><a href="#cb11-90" tabindex="-1"></a><span class="co">#&gt;  [91] lmtest_0.9-40               XVector_0.44.0             </span></span>
+<span id="cb11-91"><a href="#cb11-91" tabindex="-1"></a><span class="co">#&gt;  [93] htmltools_0.5.8.1           scales_1.4.0               </span></span>
+<span id="cb11-92"><a href="#cb11-92" tabindex="-1"></a><span class="co">#&gt;  [95] png_0.1-8                   gower_1.0.2                </span></span>
+<span id="cb11-93"><a href="#cb11-93" tabindex="-1"></a><span class="co">#&gt;  [97] knitr_1.48                  rstudioapi_0.16.0          </span></span>
+<span id="cb11-94"><a href="#cb11-94" tabindex="-1"></a><span class="co">#&gt;  [99] reshape2_1.4.4              rjson_0.2.23               </span></span>
+<span id="cb11-95"><a href="#cb11-95" tabindex="-1"></a><span class="co">#&gt; [101] nlme_3.1-166                curl_5.2.3                 </span></span>
+<span id="cb11-96"><a href="#cb11-96" tabindex="-1"></a><span class="co">#&gt; [103] nloptr_2.1.1                cachem_1.1.0               </span></span>
+<span id="cb11-97"><a href="#cb11-97" tabindex="-1"></a><span class="co">#&gt; [105] zoo_1.8-12                  stringr_1.5.1              </span></span>
+<span id="cb11-98"><a href="#cb11-98" tabindex="-1"></a><span class="co">#&gt; [107] operator.tools_1.6.3        parallel_4.4.1             </span></span>
+<span id="cb11-99"><a href="#cb11-99" tabindex="-1"></a><span class="co">#&gt; [109] restfulr_0.0.15             pillar_1.10.2              </span></span>
+<span id="cb11-100"><a href="#cb11-100" tabindex="-1"></a><span class="co">#&gt; [111] grid_4.4.1                  vctrs_0.6.5                </span></span>
+<span id="cb11-101"><a href="#cb11-101" tabindex="-1"></a><span class="co">#&gt; [113] jomo_2.7-6                  xtable_1.8-4               </span></span>
+<span id="cb11-102"><a href="#cb11-102" tabindex="-1"></a><span class="co">#&gt; [115] evaluate_1.0.0              mvtnorm_1.3-1              </span></span>
+<span id="cb11-103"><a href="#cb11-103" tabindex="-1"></a><span class="co">#&gt; [117] cli_3.6.5                   compiler_4.4.1             </span></span>
+<span id="cb11-104"><a href="#cb11-104" tabindex="-1"></a><span class="co">#&gt; [119] Rsamtools_2.20.0            rlang_1.1.6                </span></span>
+<span id="cb11-105"><a href="#cb11-105" tabindex="-1"></a><span class="co">#&gt; [121] crayon_1.5.3                future.apply_1.11.3        </span></span>
+<span id="cb11-106"><a href="#cb11-106" tabindex="-1"></a><span class="co">#&gt; [123] kinship2_1.9.6.1            plyr_1.8.9                 </span></span>
+<span id="cb11-107"><a href="#cb11-107" tabindex="-1"></a><span class="co">#&gt; [125] stringi_1.8.7               BiocParallel_1.38.0        </span></span>
+<span id="cb11-108"><a href="#cb11-108" tabindex="-1"></a><span class="co">#&gt; [127] Biostrings_2.72.1           CompQuadForm_1.4.3         </span></span>
+<span id="cb11-109"><a href="#cb11-109" tabindex="-1"></a><span class="co">#&gt; [129] quantreg_5.98               bit64_4.5.2                </span></span>
+<span id="cb11-110"><a href="#cb11-110" tabindex="-1"></a><span class="co">#&gt; [131] future_1.49.0               quantsmooth_1.70.0         </span></span>
+<span id="cb11-111"><a href="#cb11-111" tabindex="-1"></a><span class="co">#&gt; [133] KEGGREST_1.44.1             SummarizedExperiment_1.34.0</span></span>
+<span id="cb11-112"><a href="#cb11-112" tabindex="-1"></a><span class="co">#&gt; [135] broom_1.0.7                 memoise_2.0.1              </span></span>
+<span id="cb11-113"><a href="#cb11-113" tabindex="-1"></a><span class="co">#&gt; [137] bslib_0.8.0                 bit_4.5.0</span></span></code></pre></div>
 </div>
 </div>
 
